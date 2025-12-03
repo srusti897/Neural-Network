@@ -4,17 +4,15 @@ def dense_layer(x, weights, relu):
     return relu(z)
 def relu(x):
     return np.maximum(0, x)
-# Example message features
-# x = [spam_keyword_count, message_length]
-x = np.array([3, 120])
-# Randomly chosen weights for demonstration
+# Input now has 3 features
+x = np.array([1, 0, 1])
+# Weights must have 3 values per neuron
 weights = np.array([
-    [0.8, 0.01],   # neuron 1
-    [0.4, 0.005]   # neuron 2
+    [0.8, 0.01, 0.5],    # neuron 1 weights
+    [0.4, 0.005, 0.2]    # neuron 2 weights
 ])
 output = dense_layer(x, weights, relu)
 print("Model Output:", output)
-# simple interpretation
 if output[0] > 1:
     print("Prediction: SPAM")
 else:
