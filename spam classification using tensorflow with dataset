@@ -1,0 +1,29 @@
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences #converting input into fixed length
+import numpy as np
+texts = [
+    "Win a free iPhone", "You won cash prize", "Let's meet tomorrow",
+    "Are you coming to office?", "Free entry in contest", "Lunch at 1 PM?"
+]
+labels = [1, 1, 0, 0, 1, 0]
+# Tokenize
+tokenizer = Tokenizer(num_words=1000, oov_token="<OOV>")
+tokenizer.fit_on_texts(texts)
+seq = tokenizer.texts_to_sequences(texts)
+pad = pad_sequences(seq, padding='post')
+# Model (using tf.keras.layers instead of direct imports)
+model = tf.keras.Sequential([
+    tf.keras.layers.Embedding(1000, 16),
+    tf.keras.layers.GlobalAveragePooling1D(), 
+    tf.keras.layers.Dense(16, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.fit(pad, np.array(labels), epochs=15) #epochs means in each time how many times it should train
+# Test
+test = ["You won a lottery!!!"]
+test_seq = tokenizer.texts_to_sequences(test)
+test_pad = pad_sequences(test_seq, maxlen=pad.shape[1], padding='post')
+prediction = model.predict(test_pad)
+print("Spam probability:", prediction[0][0])
