@@ -1,0 +1,17 @@
+import tensorflow as tf
+def relu(x):
+    return tf.maximum(0.0, x)
+def dense_layer(x, weights, relu):
+    z = tf.linalg.matmul(weights, x)
+    return relu(z)
+x = tf.constant([[1.0], [0.0], [1.0]])
+weights = tf.constant([
+    [0.8, 0.01, 0.5],
+    [0.4, 0.005, 0.2]
+], dtype=tf.float32)
+output = dense_layer(x, weights, relu)
+print("Model Output:", output.numpy())
+if output[0][0] > 1:
+    print("Prediction: SPAM")
+else:
+    print("Prediction: NOT SPAM")
