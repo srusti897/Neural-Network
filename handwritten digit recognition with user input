@@ -1,0 +1,76 @@
+import tensorflow as tf
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.utils import to_categorical
+
+# -------------------------------------------------------
+# 1. Load and prepare MNIST data
+# -------------------------------------------------------
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+x_train = x_train.astype("float32") / 255
+x_test = x_test.astype("float32") / 255
+
+y_train = to_categorical(y_train, 10)
+y_test = to_categorical(y_test, 10)
+
+# -------------------------------------------------------
+# 2. Build neural network model
+# -------------------------------------------------------
+model = Sequential([
+    Flatten(input_shape=(28, 28)),
+    Dense(128, activation='relu'),
+    Dense(64, activation='relu'),
+    Dense(10, activation='softmax')
+])
+model.compile(optimizer="adam",
+              loss="categorical_crossentropy",
+              metrics=["accuracy"])
+print("\nTraining model...\n")
+model.fit(x_train, y_train, epochs=5, batch_size=32, verbose=1)
+# -------------------------------------------------------
+# 3. Evaluate accuracy
+# -------------------------------------------------------
+loss, acc = model.evaluate(x_test, y_test)
+print("\nModel Test Accuracy:", acc)
+# -------------------------------------------------------
+# 4. USER INPUT IMAGE
+# -------------------------------------------------------
+img_path = input("\nEnter the path of your handwritten digit image (PNG/JPG): ")
+# Read image
+img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+# Check if loaded properly
+if img is None:
+    print("Error: Could not load image. Check the file path.")
+    exit()
+# Show the user image
+plt.imshow(img, cmap="gray")
+plt.title("Your Input Image")
+plt.axis("off")
+plt.show()
+# -------------------------------------------------------
+# 5. Preprocess image for MNIST
+# -------------------------------------------------------
+# Resize to 28x28
+img_resized = cv2.resize(img, (28, 28))
+# Invert color (if needed)
+img_resized = cv2.bitwise_not(img_resized)
+# Normalize
+img_resized = img_resized.astype("float32") / 255
+# Reshape for model
+img_input = img_resized.reshape(1, 28, 28)
+# -------------------------------------------------------
+# 6. Predict digit
+# -------------------------------------------------------
+prediction = model.predict(img_input)
+digit = np.argmax(prediction)
+print("\nPredicted Digit:", digit)
+# Show processed image
+plt.imshow(img_resized, cmap="gray")
+plt.title(f"Processed Image → Prediction: {digit}")
+plt.axis("off")
+plt.show()
