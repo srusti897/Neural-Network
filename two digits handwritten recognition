@@ -1,0 +1,115 @@
+import numpy as np
+import cv2
+import os
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras import layers, models
+# ============================================================
+# 0. CREATE TWO-DIGIT IMAGE (Hand-written style)
+# ============================================================
+# Create a blank 40x28 black image (wider for two digits)
+img = np.zeros((28, 40), dtype=np.uint8)
+# Two-digit number (CHANGE THIS TO ANY TWO DIGITS)
+text = "78"
+# Draw the number in white
+cv2.putText(img, text, (2, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255), 2)
+# Save
+cv2.imwrite("two_digit.png", img)
+print("two_digit.png generated!")
+# Show the generated image
+plt.imshow(img, cmap="gray")
+plt.title("Generated Two-digit image")
+plt.axis("off")
+plt.show()
+# ============================================================
+# 1. LOAD MNIST + TRAIN CNN MODEL
+# ============================================================
+print("Loading MNIST...")
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+# Preprocessing
+x_train = x_train.reshape(-1, 28, 28, 1).astype("float32") / 255.0
+x_test  = x_test.reshape(-1, 28, 28, 1).astype("float32") / 255.0
+# CNN Model
+model = models.Sequential([
+    layers.Conv2D(32, (3, 3), activation="relu", input_shape=(28, 28, 1)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation="relu"),
+    layers.MaxPooling2D((2, 2)),
+    layers.Flatten(),
+    layers.Dense(128, activation="relu"),
+    layers.Dense(10, activation="softmax")
+])
+model.compile(optimizer="adam",
+              loss="sparse_categorical_crossentropy",
+              metrics=["accuracy"])
+print("Training model...")
+model.fit(x_train, y_train, epochs=3, batch_size=64,
+          validation_data=(x_test, y_test))
+# ============================================================
+# 2. LOAD THE GENERATED 2-DIGIT IMAGE
+# ============================================================
+img_path = "two_digit.png"
+img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+print("Loaded:", img_path)
+print("Shape:", img.shape)
+plt.imshow(img, cmap="gray")
+plt.title("Loaded 2-digit image")
+plt.axis("off")
+plt.show()
+# ============================================================
+# 3. SPLIT IMAGE INTO LEFT AND RIGHT DIGITS
+# ============================================================
+h, w = img.shape
+mid = w // 2
+left_img  = img[:, :mid]
+right_img = img[:, mid:]
+plt.figure(figsize=(8, 4))
+plt.subplot(1, 2, 1)
+plt.imshow(left_img, cmap="gray")
+plt.title("Left digit")
+plt.axis("off")
+plt.subplot(1, 2, 2)
+plt.imshow(right_img, cmap="gray")
+plt.title("Right digit")
+plt.axis("off")
+plt.show()
+# ============================================================
+# 4. PREPROCESS ONE DIGIT IMAGE
+# ============================================================
+def preprocess_digit(img_digit):
+    # Resize to MNIST size
+    img_resized = cv2.resize(img_digit, (28, 28))
+    # Invert if necessary
+    if np.mean(img_resized) > 127:
+        img_resized = 255 - img_resized
+    # Threshold clean
+    _, img_thresh = cv2.threshold(img_resized, 0, 255,
+                                  cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    img_norm = img_thresh.astype("float32") / 255.0
+    img_input = img_norm.reshape(1, 28, 28, 1)
+    return img_input, img_norm
+# Preprocess both digits
+left_input, left_norm = preprocess_digit(left_img)
+right_input, right_norm = preprocess_digit(right_img)
+# ============================================================
+# 5. PREDICT BOTH DIGITS
+# ============================================================
+pred_left  = model.predict(left_input)
+pred_right = model.predict(right_input)
+digit_left  = int(tf.argmax(pred_left, axis=1).numpy()[0])
+digit_right = int(tf.argmax(pred_right, axis=1).numpy()[0])
+final_number = f"{digit_left}{digit_right}"
+print("Predicted LEFT digit :", digit_left)
+print("Predicted RIGHT digit:", digit_right)
+print("\nFINAL PREDICTED NUMBER =", final_number)
+# Show what model sees
+plt.figure(figsize=(6, 3))
+plt.subplot(1, 2, 1)
+plt.imshow(left_norm, cmap="gray")
+plt.title(f"Left → {digit_left}")
+plt.axis("off")
+plt.subplot(1, 2, 2)
+plt.imshow(right_norm, cmap="gray")
+plt.title(f"Right → {digit_right}")
+plt.axis("off")
+plt.show()
