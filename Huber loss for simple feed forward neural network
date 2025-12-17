@@ -1,0 +1,31 @@
+# Huber Loss function
+def huber_loss(y, y_pred, delta):
+    n = len(y)
+    total_loss = 0
+    for i in range(n):
+        error = abs(y[i] - y_pred[i])
+        if error <= delta:
+            total_loss += 0.5 * error ** 2
+        else:
+            total_loss += delta * (error - 0.5 * delta)
+    return total_loss / n
+# Input data (10 values)
+X = [5, 8, 3, 6, 9, 4, 7, 2, 10, 1]
+y = [5, 8, 3, 6, 9, 4, 7, 2, 10, 1]
+# Weights and bias (single-layer feed forward)
+weights = [0.9, 1.1, 0.8, 1.0, 0.95, 1.05, 0.85, 1.2, 0.75, 1.15]
+bias = 0.5
+delta = 0.5
+# -------- Forward Pass (NO activation function) --------
+y_pred = []
+for i in range(len(X)):
+    z = X[i] * weights[i] + bias   # Linear feed-forward
+    y_pred.append(z)
+# -------- Huber Loss --------
+loss = huber_loss(y, y_pred, delta)
+# -------- Output --------
+print("Input X:", X)
+print("True Y:", y)
+print("Predicted Y:", y_pred)
+print("Delta:", delta)
+print("Huber Loss:", loss)
